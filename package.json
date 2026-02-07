@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm db:start && next dev",
+    "dev": "pnpm db:start && pnpm anvil:start && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "ultracite check",
-    "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "husky",
     "db:start": "docker start onchain-db 2>/dev/null || docker run --name onchain-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:17",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "anvil:start": "bash scripts/start-anvil.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
