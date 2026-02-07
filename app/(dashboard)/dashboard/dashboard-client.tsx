@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut, Wallet } from "lucide-react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useLinkWallet } from "@/hooks/use-link-wallet";
 import { authClient } from "@/lib/auth-client";
 
 interface Session {
@@ -25,6 +27,9 @@ interface Session {
 
 export function DashboardClient({ session }: { session: Session }) {
   const router = useRouter();
+
+  // Auto-link wallet when connected
+  useLinkWallet();
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -84,10 +89,7 @@ export function DashboardClient({ session }: { session: Session }) {
               <CardDescription>Connect your wallet</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled variant="outline">
-                <Wallet className="size-4" />
-                Connect Wallet (coming soon)
-              </Button>
+              <ConnectButton />
             </CardContent>
           </Card>
         </div>
