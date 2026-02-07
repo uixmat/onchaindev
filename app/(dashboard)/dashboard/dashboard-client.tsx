@@ -1,8 +1,9 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { LogOut } from "lucide-react";
+import { Coins, LogOut, Network } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAccount, useBalance, useChainId } from "wagmi";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { useLinkWallet } from "@/hooks/use-link-wallet";
 import { authClient } from "@/lib/auth-client";
+import { anvil } from "@/lib/wagmi";
 
 interface Session {
   user: {
@@ -27,6 +29,9 @@ interface Session {
 
 export function DashboardClient({ session }: { session: Session }) {
   const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { data: balance } = useBalance({ address });
 
   // Auto-link wallet when connected
   useLinkWallet();
@@ -42,6 +47,14 @@ export function DashboardClient({ session }: { session: Session }) {
     .map((n) => n[0])
     .join("")
     .toUpperCase();
+
+  let chainName = `Chain ${chainId}`;
+  if (chainId === anvil.id) {
+    chainName = "Anvil Local";
+  }
+  if (chainId === 1) {
+    chainName = "Ethereum";
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -92,6 +105,49 @@ export function DashboardClient({ session }: { session: Session }) {
               <ConnectButton />
             </CardContent>
           </Card>
+
+          {isConnected && address && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Coins className="size-5" />
+                    Balance
+                  </CardTitle>
+                  <CardDescription>Current holdings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="font-bold font-mono text-3xl">
+                      {balance
+                        ? `${Number(balance.formatted).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${balance.symbol}`
+                        : "Loading..."}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {address.slice(0, 6)}...{address.slice(-4)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
+                    <Network className="size-4 text-muted-foreground" />
+                    <span className="text-sm">{chainName}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Activity</CardTitle>
+                  <CardDescription>Recent transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm">
+                    No transactions yet. Send ETH or interact with contracts to
+                    see activity here.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </main>
     </div>
