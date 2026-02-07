@@ -2,6 +2,7 @@
 
 import { LogOut, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ModeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,7 @@ interface Session {
     id: string;
     name: string;
     email: string;
-    image: string | null;
+    image?: string | null | undefined;
   };
 }
 
@@ -49,6 +50,7 @@ export function DashboardClient({ session }: { session: Session }) {
             </Avatar>
             <span className="text-sm">{user.name}</span>
           </div>
+          <ModeToggle />
           <Button onClick={handleSignOut} size="sm" variant="ghost">
             <LogOut className="size-4" />
           </Button>
