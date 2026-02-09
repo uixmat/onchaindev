@@ -1,11 +1,10 @@
 "use client";
 
-import { Coins, LogOut, Network } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Coins, Network } from "lucide-react";
 import { useAccount, useBalance, useChainId } from "wagmi";
-import { ModeToggle } from "@/components/theme-toggle";
+import { EnsInput } from "@/components/ens-input";
+import { PageTransition } from "@/components/page-transition";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,8 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { WalletConnect } from "@/components/wallet-connect";
+import { WalletInput } from "@/components/wallet-input";
 import { useLinkWallet } from "@/hooks/use-link-wallet";
-import { authClient } from "@/lib/auth-client";
 import { anvil } from "@/lib/wagmi";
 
 interface Session {
@@ -28,18 +27,12 @@ interface Session {
 }
 
 export function DashboardClient({ session }: { session: Session }) {
-  const router = useRouter();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { data: balance } = useBalance({ address });
 
   // Auto-link wallet when connected
   useLinkWallet();
-
-  const handleSignOut = async () => {
-    await authClient.signOut();
-    router.push("/");
-  };
 
   const { user } = session;
   const initials = user.name
@@ -57,99 +50,82 @@ export function DashboardClient({ session }: { session: Session }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <h1 className="font-semibold text-lg">onchain</h1>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Avatar size="sm">
-              <AvatarImage alt={user.name} src={user.image ?? undefined} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm">{user.name}</span>
-          </div>
-          <ModeToggle />
-          <Button onClick={handleSignOut} size="sm" variant="ghost">
-            <LogOut className="size-4" />
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 p-6">
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Your account details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Avatar size="lg">
-                  <AvatarImage alt={user.name} src={user.image ?? undefined} />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-muted-foreground text-sm">{user.email}</p>
-                </div>
+    <PageTransition>
+      <div className="mx-auto grid max-w-4xl gap-6 p-6 md:grid-cols-2">
+        {/* Profile Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile</CardTitle>
+            <CardDescription>Your account details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar size="lg">
+                <AvatarImage alt={user.name} src={user.image ?? undefined} />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{user.name}</p>
+                <p className="text-muted-foreground text-sm">{user.email}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <EnsInput />
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Wallet</CardTitle>
-              <CardDescription>Connect your wallet</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <WalletConnect />
-            </CardContent>
-          </Card>
-
-          {isConnected && address && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Coins className="size-5" />
-                    Balance
-                  </CardTitle>
-                  <CardDescription>Current holdings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="font-bold font-mono text-3xl">
-                      {balance
-                        ? `${Number(balance.formatted).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${balance.symbol}`
-                        : "Loading..."}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {address.slice(0, 6)}...{address.slice(-4)}
-                    </p>
+        {/* Wallet Card (merged with balance) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Wallet</CardTitle>
+            <CardDescription>
+              {isConnected ? "Connected" : "Connect your wallet"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <WalletConnect />
+            {isConnected && address && balance && (
+              <div className="space-y-2 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-4 text-muted-foreground" />
+                    <span className="text-muted-foreground text-sm">
+                      Balance
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
-                    <Network className="size-4 text-muted-foreground" />
-                    <span className="text-sm">{chainName}</span>
+                  <div className="flex items-center gap-2">
+                    <Network className="size-3 text-muted-foreground" />
+                    <span className="text-muted-foreground text-xs">
+                      {chainName}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p className="font-bold font-mono text-2xl">
+                  {Number(balance.formatted).toLocaleString(undefined, {
+                    maximumFractionDigits: 4,
+                  })}{" "}
+                  {balance.symbol}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity</CardTitle>
-                  <CardDescription>Recent transactions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-sm">
-                    No transactions yet. Send ETH or interact with contracts to
-                    see activity here.
-                  </p>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
-      </main>
-    </div>
+        {/* View Portfolio Card */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Explore Portfolio</CardTitle>
+            <CardDescription>
+              Enter any wallet address or ENS name
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WalletInput />
+            <p className="mt-2 text-muted-foreground text-xs">
+              Try: vitalik.eth or any Ethereum address
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </PageTransition>
   );
 }

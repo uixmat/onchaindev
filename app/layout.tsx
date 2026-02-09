@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ViewTransition } from "react";
+import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Web3Provider } from "@/components/web3-provider";
 import "./globals.css";
@@ -35,7 +37,14 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <Web3Provider>{children}</Web3Provider>
+          <Web3Provider>
+            <div className="flex min-h-screen flex-col">
+              <AppHeader />
+              <ViewTransition enter="page-transition" exit="page-transition">
+                <main className="flex-1">{children}</main>
+              </ViewTransition>
+            </div>
+          </Web3Provider>
         </ThemeProvider>
       </body>
     </html>
