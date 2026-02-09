@@ -1,6 +1,5 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Coins, LogOut, Network } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAccount, useBalance, useChainId } from "wagmi";
@@ -14,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { WalletConnect } from "@/components/wallet-connect";
 import { useLinkWallet } from "@/hooks/use-link-wallet";
 import { authClient } from "@/lib/auth-client";
 import { anvil } from "@/lib/wagmi";
@@ -102,7 +102,7 @@ export function DashboardClient({ session }: { session: Session }) {
               <CardDescription>Connect your wallet</CardDescription>
             </CardHeader>
             <CardContent>
-              <ConnectButton />
+              <WalletConnect />
             </CardContent>
           </Card>
 
