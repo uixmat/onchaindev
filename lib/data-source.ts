@@ -8,6 +8,7 @@ import {
 } from "./alchemy";
 import { MAYC_CONTRACT, maycCollection } from "./mock/collection";
 import { getMockNFT, mockNFTs } from "./mock/nfts";
+import type { PricePoint, SaleEvent } from "./mock/price-history";
 import {
   generateCollectionPriceHistory,
   generateNFTSaleHistory,
@@ -240,11 +241,11 @@ export function fetchCollectionData(
 ): Promise<CollectionData | null> {
   if (USE_MOCK) {
     if (contract.toLowerCase() === MAYC_CONTRACT.toLowerCase()) {
-      return maycCollection;
+      return Promise.resolve(maycCollection);
     }
-    return maycCollection; // fallback to MAYC for any contract in mock mode
+    return Promise.resolve(maycCollection); // fallback to MAYC for any contract in mock mode
   }
-  return null;
+  return Promise.resolve(null);
 }
 
 export function fetchCollectionPriceHistory(): PricePoint[] {
