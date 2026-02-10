@@ -33,7 +33,7 @@ export function AppHeader() {
     .toUpperCase();
 
   return (
-    <header className="flex items-center justify-between border-b px-6 py-4">
+    <header className="flex items-center justify-between bg-background/50 px-6 py-4 backdrop-blur-sm">
       <Link className="font-bold text-xl" href="/">
         onchain
       </Link>

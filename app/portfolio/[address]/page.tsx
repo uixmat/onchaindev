@@ -82,8 +82,8 @@ export default function PortfolioPage({ params }: PageProps) {
   return (
     <>
       {/* Sub-header */}
-      <div className="border-b px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center gap-4">
+      <div className="border-b bg-background/30 px-6 py-4 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6">
           <Button
             onClick={() => window.history.back()}
             size="sm"

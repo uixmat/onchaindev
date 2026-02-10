@@ -3,10 +3,15 @@
 import {
   ArrowLeft,
   Award,
+  Coins,
   ExternalLink,
+  Layers,
   LayoutGrid,
   LayoutList,
   Loader2,
+  Percent,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
@@ -134,8 +139,8 @@ export default function TokenDetailPage({ params }: PageProps) {
   return (
     <>
       {/* Sub-header */}
-      <div className="border-b px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center gap-4">
+      <div className="border-b bg-background/30 px-6 py-4 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6">
           <Button
             onClick={() => window.history.back()}
             size="sm"
@@ -176,41 +181,78 @@ export default function TokenDetailPage({ params }: PageProps) {
           {/* Collection Stats Bar */}
           {collection && (
             <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Floor Price</p>
-                <p className="flex items-center gap-1 font-mono font-semibold">
-                  <EthIcon height="14px" />
-                  {collection.floorPrice}
-                </p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Total Volume</p>
-                <p className="flex items-center gap-1 font-mono font-semibold">
-                  <EthIcon height="14px" />
-                  {(collection.totalVolume / 1000).toFixed(0)}K
-                </p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Owners</p>
-                <p className="font-mono font-semibold">
-                  {collection.owners.toLocaleString()}{" "}
-                  <span className="text-muted-foreground text-xs">
-                    ({collection.ownerPercentage}%)
-                  </span>
-                </p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Supply</p>
-                <p className="font-mono font-semibold">
-                  {collection.totalSupply.toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Listed</p>
-                <p className="font-mono font-semibold">
-                  {collection.listedPercentage}%
-                </p>
-              </div>
+              <Card className="py-4">
+                <CardContent className="flex items-center gap-3 px-4 py-0">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Coins className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="flex items-center gap-1 font-bold font-mono text-2xl">
+                      <EthIcon height="18px" />
+                      {collection.floorPrice}
+                    </p>
+                    <p className="text-muted-foreground text-xs">Floor Price</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="py-4">
+                <CardContent className="flex items-center gap-3 px-4 py-0">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <TrendingUp className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="flex items-center gap-1 font-bold font-mono text-2xl">
+                      <EthIcon height="18px" />
+                      {(collection.totalVolume / 1000).toFixed(0)}K
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      Total Volume
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="py-4">
+                <CardContent className="flex items-center gap-3 px-4 py-0">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Users className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-2xl">
+                      {collection.owners.toLocaleString()}{" "}
+                      <span className="font-normal text-muted-foreground text-xs">
+                        ({collection.ownerPercentage}%)
+                      </span>
+                    </p>
+                    <p className="text-muted-foreground text-xs">Owners</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="py-4">
+                <CardContent className="flex items-center gap-3 px-4 py-0">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Layers className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-2xl">
+                      {collection.totalSupply.toLocaleString()}
+                    </p>
+                    <p className="text-muted-foreground text-xs">Supply</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="py-4">
+                <CardContent className="flex items-center gap-3 px-4 py-0">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Percent className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-2xl">
+                      {collection.listedPercentage}%
+                    </p>
+                    <p className="text-muted-foreground text-xs">Listed</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
