@@ -134,21 +134,40 @@ export function TraitDistribution({ nfts }: PortfolioAnalyticsProps) {
   const radarData = [
     {
       label: "Traits",
-      color: "hsl(var(--chart-1))",
       values,
     },
   ];
 
   return (
-    <div className="flex justify-center">
-      <RadarChart data={radarData} levels={4} metrics={metrics} size={240}>
-        <RadarGrid showLabels={false} />
-        <RadarAxis />
-        <RadarLabels fontSize={11} offset={22} />
-        {radarData.map((item, index) => (
-          <RadarArea index={index} key={item.label} showPoints />
-        ))}
-      </RadarChart>
+    <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+      <div className="flex justify-center">
+        <RadarChart data={radarData} levels={4} metrics={metrics} size={340}>
+          <RadarGrid showLabels={false} />
+          <RadarAxis />
+          <RadarLabels fontSize={12} offset={24} />
+          {radarData.map((item, index) => (
+            <RadarArea index={index} key={item.label} showPoints />
+          ))}
+        </RadarChart>
+      </div>
+      <div className="flex flex-col justify-center gap-2">
+        <p className="text-muted-foreground text-sm">
+          Trait counts across your portfolio
+        </p>
+        <ul className="space-y-1.5">
+          {traitEntries.map(([name, count]) => (
+            <li
+              className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5"
+              key={name}
+            >
+              <span className="text-sm">{name}</span>
+              <span className="font-mono text-muted-foreground text-xs">
+                {count}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

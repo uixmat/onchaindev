@@ -42,7 +42,7 @@ export function AppHeader() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="gap-2" size="sm" variant="ghost">
+              <Button className="gap-2 px-2" variant="ghost">
                 <Avatar size="sm">
                   <AvatarImage alt={user.name} src={user.image ?? undefined} />
                   <AvatarFallback>{initials}</AvatarFallback>

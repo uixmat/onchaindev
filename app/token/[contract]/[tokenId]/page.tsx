@@ -1,8 +1,18 @@
 "use client";
 
-import { ArrowLeft, Award, ExternalLink, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Award,
+  ExternalLink,
+  LayoutGrid,
+  LayoutList,
+  Loader2,
+} from "lucide-react";
+import { motion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { HoloCard } from "@/components/holo-card";
 import { EthIcon } from "@/components/icons/eth";
 import { PageTransition } from "@/components/page-transition";
 import { PriceHistoryChart } from "@/components/price-history-chart";
@@ -10,11 +20,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useEthPrice } from "@/hooks/use-eth-price";
+
+const RARITY_BADGE_VARIANTS = ["purple", "blue", "emerald"] as const;
 
 interface NFTDetailResponse {
   nft: {
@@ -24,7 +39,13 @@ interface NFTDetailResponse {
     collection: string;
     image: string;
     rank?: number;
-    traits: Array<{ traitType: string; value: string; rarity?: number }>;
+    traits: Array<{
+      traitType: string;
+      value: string;
+      rarity?: number;
+      count?: number;
+      ethValue?: number;
+    }>;
     lastSale?: number;
     listPrice?: number | null;
     owner?: string;
@@ -50,11 +71,14 @@ interface PageProps {
   params: Promise<{ contract: string; tokenId: string }>;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: page with multiple sections
 export default function TokenDetailPage({ params }: PageProps) {
   const { contract, tokenId } = use(params);
   const [data, setData] = useState<NFTDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [traitsLayout, setTraitsLayout] = useState<"grid" | "list">("grid");
+  const ethPrice = useEthPrice();
 
   useEffect(() => {
     fetch(`/api/nft-detail/${contract}/${tokenId}`)
@@ -101,6 +125,11 @@ export default function TokenDetailPage({ params }: PageProps) {
 
   const { nft, collection, priceHistory, sales } = data;
   const traits = nft.traits || [];
+
+  const formatUsd = (eth: number) =>
+    ethPrice
+      ? `~$${(eth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+      : null;
 
   return (
     <>
@@ -186,87 +215,143 @@ export default function TokenDetailPage({ params }: PageProps) {
           )}
 
           <div className="grid gap-8 lg:grid-cols-[500px_1fr]">
-            {/* Image */}
-            <div className="overflow-hidden rounded-xl border">
-              {nft.image ? (
-                // biome-ignore lint/performance/noImgElement: external NFT
-                // biome-ignore lint/correctness/useImageSize: sized by parent
-                <img
-                  alt={nft.name}
-                  className="aspect-square w-full object-cover"
-                  src={nft.image}
-                />
-              ) : (
-                <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
-                  No Image Available
-                </div>
-              )}
+            <div>
+              {/* Image */}
+              <div className="" style={{ perspective: 1200 }}>
+                {nft.image ? (
+                  <motion.div
+                    animate={{
+                      filter: "blur(0px)",
+                      opacity: 1,
+                      rotateX: 0,
+                      y: 0,
+                    }}
+                    initial={{
+                      filter: "blur(3px)",
+                      opacity: 0,
+                      rotateX: 8,
+                      y: 60,
+                    }}
+                    style={{ transformStyle: "preserve-3d" }}
+                    transition={{
+                      delay: 0.2,
+                      duration: 0.9,
+                      ease: [0.85, 0, 0.15, 1],
+                    }}
+                  >
+                    <HoloCard>
+                      <Image
+                        alt={nft.name}
+                        className="aspect-square w-full object-cover"
+                        height={500}
+                        src={nft.image}
+                        width={500}
+                      />
+                    </HoloCard>
+                  </motion.div>
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
+                    No Image Available
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Metadata */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Details</CardTitle>
+                  {((nft.floorPrice !== undefined && nft.floorPrice !== null) ||
+                    (nft.lastSale !== undefined && nft.lastSale !== null)) && (
+                    <div className="flex flex-wrap gap-6">
+                      {nft.floorPrice != null && (
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">
+                            Floor Price
+                          </p>
+                          <p className="flex items-baseline gap-1.5 font-mono font-semibold text-lg">
+                            <EthIcon height="18px" />
+                            {nft.floorPrice}
+                            {formatUsd(nft.floorPrice) && (
+                              <span className="font-normal text-muted-foreground text-xs">
+                                {formatUsd(nft.floorPrice)}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {nft.lastSale != null && (
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">
+                            Last Sale
+                          </p>
+                          <p className="flex items-baseline gap-1.5 font-mono font-semibold text-lg">
+                            <EthIcon height="18px" />
+                            {nft.lastSale}
+                            {formatUsd(nft.lastSale) && (
+                              <span className="font-normal text-muted-foreground text-xs">
+                                {formatUsd(nft.lastSale)}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Token ID</p>
-                    <p className="font-mono">{nft.tokenId}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-sm">Collection</p>
-                    <p>{nft.collection}</p>
-                  </div>
-                  {collection?.mintedDate && (
-                    <div>
-                      <p className="text-muted-foreground text-sm">Minted</p>
-                      <p>
-                        {new Date(collection.mintedDate).toLocaleDateString(
-                          "en-US",
-                          { month: "long", year: "numeric" }
-                        )}
+                <CardContent className="space-y-4 rounded-t-xl bg-linear-to-b from-border/50 to-transparent py-6 pb-0">
+                  <div className="space-y-px">
+                    <div className="flex items-center justify-between py-1.5">
+                      <p className="text-muted-foreground text-sm">Token ID</p>
+                      <p className="font-mono text-muted-foreground text-sm">
+                        {nft.tokenId}
                       </p>
                     </div>
-                  )}
-                  {nft.floorPrice && (
-                    <div>
+                    <div className="flex items-center justify-between py-1.5">
                       <p className="text-muted-foreground text-sm">
-                        Floor Price
+                        Collection
                       </p>
-                      <p className="flex items-center gap-1 font-mono font-semibold">
-                        <EthIcon height="14px" />
-                        {nft.floorPrice}
-                      </p>
-                    </div>
-                  )}
-                  {nft.lastSale && (
-                    <div>
-                      <p className="text-muted-foreground text-sm">Last Sale</p>
-                      <p className="flex items-center gap-1 font-mono font-semibold">
-                        <EthIcon height="14px" />
-                        {nft.lastSale}
+                      <p className="text-muted-foreground text-sm">
+                        {nft.collection}
                       </p>
                     </div>
-                  )}
-                  <div>
-                    <p className="text-muted-foreground text-sm">Contract</p>
-                    <p className="break-all font-mono text-xs">
-                      {nft.contract}
-                    </p>
+                    {collection?.mintedDate && (
+                      <div className="flex items-center justify-between py-1.5">
+                        <p className="text-muted-foreground text-sm">Minted</p>
+                        <p className="text-muted-foreground text-sm">
+                          {new Date(collection.mintedDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between py-1.5">
+                      <p className="text-muted-foreground text-sm">Contract</p>
+                      <p className="break-all font-mono text-muted-foreground text-sm">
+                        {nft.contract}
+                      </p>
+                    </div>
+                    {nft.owner && (
+                      <div className="flex items-center justify-between py-1.5">
+                        <p className="text-muted-foreground text-sm">Owner</p>
+                        <p className="break-all font-mono text-muted-foreground text-sm">
+                          {nft.owner}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {nft.owner && (
-                    <div>
-                      <p className="text-muted-foreground text-sm">Owner</p>
-                      <p className="break-all font-mono text-xs">{nft.owner}</p>
-                    </div>
-                  )}
                   {nft.description && (
-                    <div>
+                    <div className="flex flex-col gap-2 py-3">
                       <p className="text-muted-foreground text-sm">
                         Description
                       </p>
-                      <p className="text-sm">{nft.description}</p>
+                      <p className="text-card-foreground text-sm">
+                        {nft.description}
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -276,32 +361,84 @@ export default function TokenDetailPage({ params }: PageProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Traits</CardTitle>
-                    <CardDescription>
-                      {traits.length} attributes
-                    </CardDescription>
+                    <CardDescription>TRAITS {traits.length}</CardDescription>
+                    <CardAction>
+                      <ToggleGroup
+                        onValueChange={(v: string | undefined) =>
+                          v && setTraitsLayout(v as "grid" | "list")
+                        }
+                        size="sm"
+                        type="single"
+                        value={traitsLayout}
+                        variant="outline"
+                      >
+                        <ToggleGroupItem aria-label="Grid view" value="grid">
+                          <LayoutGrid className="size-3" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem aria-label="List view" value="list">
+                          <LayoutList className="size-3" />
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </CardAction>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {traits.map((trait) => (
-                        <div
-                          className="flex items-center justify-between rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50"
-                          key={`${trait.traitType}-${trait.value}`}
-                        >
-                          <span className="text-muted-foreground text-xs uppercase">
-                            {trait.traitType}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">
-                              {trait.value}
-                            </span>
-                            {trait.rarity && (
-                              <span className="text-muted-foreground text-xs">
-                                {trait.rarity}%
+                    <div
+                      className={
+                        traitsLayout === "grid"
+                          ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                          : "flex flex-col gap-3"
+                      }
+                    >
+                      {traits.map((trait, i) => {
+                        const badgeVariant = RARITY_BADGE_VARIANTS[i % 3];
+                        return (
+                          <div
+                            className={`flex flex-col gap-2 rounded-lg border px-3 py-2.5 transition-colors hover:bg-muted/50 ${
+                              traitsLayout === "list"
+                                ? "flex-row items-center justify-between"
+                                : ""
+                            }`}
+                            key={`${trait.traitType}-${trait.value}`}
+                          >
+                            <div
+                              className={
+                                traitsLayout === "list"
+                                  ? "flex flex-1 flex-col"
+                                  : ""
+                              }
+                            >
+                              <span className="text-muted-foreground text-xs uppercase">
+                                {trait.traitType}
                               </span>
-                            )}
+                              <p className="font-medium text-sm">
+                                {trait.value}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {(trait.count != null ||
+                                trait.rarity != null) && (
+                                <Badge
+                                  className="tabular-nums"
+                                  variant={badgeVariant}
+                                >
+                                  {trait.count != null &&
+                                    `${trait.count.toLocaleString()}`}
+                                  {trait.count != null &&
+                                    trait.rarity != null &&
+                                    " · "}
+                                  {trait.rarity != null && `${trait.rarity}%`}
+                                </Badge>
+                              )}
+                              {trait.ethValue != null && (
+                                <span className="flex items-center gap-0.5 font-mono text-sm">
+                                  <EthIcon height="12px" />
+                                  {trait.ethValue}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>

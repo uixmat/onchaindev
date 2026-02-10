@@ -30,15 +30,19 @@ export interface NFTData {
   collection: string;
   image: string;
   rank?: number;
-  traits: Array<{ traitType: string; value: string; rarity?: number }>;
+  traits: Array<{
+    traitType: string;
+    value: string;
+    rarity?: number;
+    count?: number;
+    ethValue?: number;
+  }>;
   lastSale?: number;
   listPrice?: number | null;
   owner?: string;
   description?: string;
   floorPrice?: number;
 }
-
-export type { CollectionData, PricePoint, SaleEvent };
 
 // ---- Data fetchers ----
 
@@ -131,10 +135,17 @@ export async function fetchNFTDetail(
         alchemyNft.image?.originalUrl ||
         alchemyNft.image?.thumbnailUrl ||
         "",
-      traits: (alchemyNft.raw?.metadata?.attributes || []).map((a) => ({
-        traitType: a.trait_type,
-        value: a.value,
-      })),
+      traits: (alchemyNft.raw?.metadata?.attributes || []).map((a) => {
+        const floor =
+          (floorRes.status === "fulfilled"
+            ? floorRes.value.openSea?.floorPrice
+            : null) ?? alchemyNft.contract.openSeaMetadata?.floorPrice;
+        return {
+          traitType: a.trait_type,
+          value: a.value,
+          ethValue: typeof floor === "number" ? floor : undefined,
+        };
+      }),
       floorPrice:
         (floorRes.status === "fulfilled"
           ? floorRes.value.openSea?.floorPrice
@@ -246,6 +257,8 @@ export function fetchCollectionPriceHistory(): PricePoint[] {
 // ---- Helper ----
 
 function toUnifiedNFT(mock: MockNFT): NFTData {
+  const floor = maycCollection.floorPrice;
+  const totalSupply = maycCollection.totalSupply;
   return {
     tokenId: mock.tokenId,
     name: mock.name,
@@ -257,11 +270,13 @@ function toUnifiedNFT(mock: MockNFT): NFTData {
       traitType: t.traitType,
       value: t.value,
       rarity: t.rarity,
+      count: Math.round(totalSupply * (t.rarity / 100)),
+      ethValue: floor,
     })),
     lastSale: mock.lastSale,
     listPrice: mock.listPrice,
     owner: mock.owner,
     description: mock.description,
-    floorPrice: maycCollection.floorPrice,
+    floorPrice: floor,
   };
 }

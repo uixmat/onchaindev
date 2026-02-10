@@ -196,6 +196,7 @@ export default function PortfolioPage({ params }: PageProps) {
                                 </div>
                               )}
                             </div>
+
                             <div className="space-y-1 p-4">
                               <p className="truncate font-medium text-sm">
                                 {nft.name}
