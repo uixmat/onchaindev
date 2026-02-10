@@ -1,6 +1,37 @@
 # onchain
 
-An on-chain dashboard for managing user accounts, wallet connections, and blockchain interactions.
+A mini on-chain portfolio app for viewing NFT collections and token details. Enter any wallet address (or ENS) to explore portfolios, traits, and price history.
+
+## Development Time
+
+The majority of this app was vibe coded in **~2 hours**, including:
+
+- Wallet address input and portfolio list view
+- Token detail page with HoloCard, traits, and price history
+- Portfolio analytics (stats, trait radar chart)
+- Animations, loading states, and a11y polish
+
+The baseline (MetaMask setup, Better Auth, Discord OAuth, RainbowKit, Postgres) was already in place — add roughly **1–2 hours** if starting from scratch.
+
+## Quick Start
+
+### Option A: Demo the portfolio (mock data)
+
+No MetaMask or API keys required. Uses mock NFT data. **Requires:** Node 20+, pnpm 9+, Docker (for Postgres + Anvil).
+
+```bash
+pnpm install
+cp .env.example .env.local
+# Set DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL (see Getting Started)
+# NEXT_PUBLIC_DATA_SOURCE=mock is default — no Alchemy key needed
+pnpm dev
+```
+
+Open http://localhost:3000, enter any address (e.g. `vitalik.eth` or `0x...`) in the search bar, and explore. Flow: **Home → Portfolio (list) → Token detail**.
+
+### Option B: Full setup (MetaMask, auth, real data)
+
+For wallet connection, Discord sign-in, and live Alchemy data, follow the [Getting Started](#getting-started) section below. See [MetaMask Setup](#metamask-setup-first-time-users) for first-time wallet setup.
 
 ## Tech Stack
 
@@ -310,43 +341,6 @@ You should see:
 - Your user ID
 - `is_primary = t`
 - Timestamp
-
----
-
-## Common Issues
-
-**MetaMask won't connect:**
-- Make sure you're on **Anvil Local** network in MetaMask (not Ethereum Mainnet)
-- Make sure MetaMask is **unlocked** (enter password if needed)
-- Refresh the dashboard page and try again
-- Check that Anvil is running: `lsof -i :8545`
-
-**"Opening MetaMask..." hangs:**
-- **Click the MetaMask extension icon** in your browser toolbar - the approval screen is usually there
-- Make sure MetaMask is unlocked (not showing password screen)
-- Check browser console (F12) for error messages
-
-**"Cannot save network" in MetaMask:**
-- Make sure RPC URL has `http://` prefix: `http://127.0.0.1:8545`
-- If onboarding flow is stuck, close it and add network through Settings after completing setup
-- Click "Open wallet" first, then add network via Settings > Networks > Add network
-
-**Anvil not found:**
-- Run `source ~/.zshenv` or restart your terminal
-- Verify with: `which anvil` (should show `~/.foundry/bin/anvil`)
-
-**Database connection error:**
-- Make sure Docker is running
-- Restart the container: `docker restart onchain-db`
-
-**Wrong network in MetaMask:**
-- Click the network dropdown (top left)
-- Select **"Anvil Local"** from the list
-- You should see 10,000 ETH when on the correct network
-
-**Connected wallet shows wrong address:**
-- MetaMask remembers which account was selected for each network
-- Switch accounts in MetaMask if needed (click account dropdown at top)
 
 ---
 
