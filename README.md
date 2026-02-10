@@ -33,6 +33,10 @@ Open http://localhost:3000, enter any address (e.g. `vitalik.eth` or `0x...`) in
 
 For wallet connection, Discord sign-in, and live Alchemy data, follow the [Getting Started](#getting-started) section below. See [MetaMask Setup](#metamask-setup-first-time-users) for first-time wallet setup.
 
+### Deploy to Vercel + Supabase
+
+See [DEPLOY_VERCEL_SUPABASE.md](DEPLOY_VERCEL_SUPABASE.md) for deploying to Vercel with Supabase PostgreSQL.
+
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router, React 19, Turbopack)
