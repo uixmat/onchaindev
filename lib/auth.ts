@@ -6,6 +6,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
+  trustedOrigins: ["http://localhost:3000", "https://onchaindev.vercel.app"],
   socialProviders: {
     discord: {
       clientId: process.env.DISCORD_CLIENT_ID as string,
