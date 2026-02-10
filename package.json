@@ -10,7 +10,7 @@
     "fix": "ultracite fix",
     "prepare": "husky",
     "db:start": "docker start onchain-db 2>/dev/null || docker run --name onchain-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:17",
-    "db:push": "drizzle-kit push",
+    "db:push": "NODE_TLS_REJECT_UNAUTHORIZED=0 drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "anvil:start": "bash scripts/start-anvil.sh"

@@ -34,7 +34,7 @@ export function PortfolioValueChart({ data }: PortfolioValueChartProps) {
           {
             color: "hsl(var(--chart-1))",
             label: "Portfolio Value",
-            value: `${point.value?.toFixed(2)} ETH`,
+            value: `${Number(point.value ?? 0).toFixed(2)} ETH`,
           },
         ]}
       />
