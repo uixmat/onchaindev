@@ -42,7 +42,7 @@ const GRID_COUNT = 12;
 
 function CardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div aria-hidden className="overflow-hidden rounded-xl border">
       <Skeleton className="aspect-square" />
       <div className="space-y-2 p-4">
         <Skeleton className="h-4 w-3/4" />
@@ -85,18 +85,19 @@ export default function PortfolioPage({ params }: PageProps) {
       <div className="border-b bg-background/30 px-6 py-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-6">
           <Button
+            aria-label="Go back"
             onClick={() => window.history.back()}
             size="sm"
             variant="ghost"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft aria-hidden className="size-4" />
           </Button>
           <div>
             <h1 className="font-semibold text-xl">Portfolio</h1>
             <p className="font-mono text-muted-foreground text-sm">{address}</p>
           </div>
           {!(loading || error) && nfts.length > 0 && (
-            <div className="ml-auto">
+            <div aria-live="polite" className="ml-auto">
               <p className="font-semibold text-lg">{totalCount} NFTs</p>
             </div>
           )}
@@ -107,12 +108,15 @@ export default function PortfolioPage({ params }: PageProps) {
         <div className="mx-auto max-w-7xl p-6">
           {/* Error state */}
           {error && (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
+            <div
+              className="flex flex-col items-center justify-center gap-4 py-16"
+              role="alert"
+            >
               <h2 className="font-bold text-2xl">Error</h2>
               <p className="text-muted-foreground">{error}</p>
               <Button asChild>
                 <Link href="/">
-                  <ArrowLeft className="size-4" />
+                  <ArrowLeft aria-hidden className="size-4" />
                   Back to Home
                 </Link>
               </Button>
@@ -121,23 +125,26 @@ export default function PortfolioPage({ params }: PageProps) {
 
           {/* Empty state */}
           {!(loading || error) && nfts.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
+            <output
+              aria-live="polite"
+              className="flex flex-col items-center justify-center gap-4 py-16"
+            >
               <h2 className="font-bold text-2xl">No NFTs Found</h2>
               <p className="text-muted-foreground">
                 This wallet doesn&apos;t have any NFTs.
               </p>
               <Button asChild>
                 <Link href="/">
-                  <ArrowLeft className="size-4" />
+                  <ArrowLeft aria-hidden className="size-4" />
                   Back to Home
                 </Link>
               </Button>
-            </div>
+            </output>
           )}
 
           {/* Main content */}
           {!error && (loading || nfts.length > 0) && (
-            <div className="space-y-6">
+            <div aria-busy={loading} className="space-y-6">
               {/* Stats Row */}
               {!loading && <PortfolioStats nfts={nfts} />}
 
@@ -167,6 +174,7 @@ export default function PortfolioPage({ params }: PageProps) {
                       ))
                     : nfts.map((nft) => (
                         <Link
+                          aria-label={`View ${nft.name} from ${nft.collection}`}
                           href={`/token/${nft.contract}/${nft.tokenId}`}
                           key={`${nft.contract}-${nft.tokenId}`}
                         >

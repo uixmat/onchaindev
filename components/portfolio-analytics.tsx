@@ -44,9 +44,12 @@ export function PortfolioStats({ nfts }: PortfolioAnalyticsProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <Card className="py-4">
+      <Card aria-label={`NFTs owned: ${totalNFTs}`} className="py-4">
         <CardContent className="flex items-center gap-3 px-4 py-0">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+          <div
+            aria-hidden
+            className="flex size-9 items-center justify-center rounded-lg bg-primary/10"
+          >
             <Grid3X3 className="size-4 text-primary" />
           </div>
           <div>
@@ -56,9 +59,15 @@ export function PortfolioStats({ nfts }: PortfolioAnalyticsProps) {
         </CardContent>
       </Card>
 
-      <Card className="py-4">
+      <Card
+        aria-label={`Estimated value: ${estimatedValue.toFixed(2)} ETH`}
+        className="py-4"
+      >
         <CardContent className="flex items-center gap-3 px-4 py-0">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+          <div
+            aria-hidden
+            className="flex size-9 items-center justify-center rounded-lg bg-primary/10"
+          >
             <Coins className="size-4 text-primary" />
           </div>
           <div>
@@ -71,9 +80,12 @@ export function PortfolioStats({ nfts }: PortfolioAnalyticsProps) {
         </CardContent>
       </Card>
 
-      <Card className="py-4">
+      <Card aria-label={`Collections: ${collections}`} className="py-4">
         <CardContent className="flex items-center gap-3 px-4 py-0">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+          <div
+            aria-hidden
+            className="flex size-9 items-center justify-center rounded-lg bg-primary/10"
+          >
             <Layers className="size-4 text-primary" />
           </div>
           <div>
@@ -83,9 +95,15 @@ export function PortfolioStats({ nfts }: PortfolioAnalyticsProps) {
         </CardContent>
       </Card>
 
-      <Card className="py-4">
+      <Card
+        aria-label={`Rarest NFT: ${rarestNFT ? `rank #${rarestNFT.rank}` : "none"}`}
+        className="py-4"
+      >
         <CardContent className="flex items-center gap-3 px-4 py-0">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+          <div
+            aria-hidden
+            className="flex size-9 items-center justify-center rounded-lg bg-primary/10"
+          >
             <Award className="size-4 text-primary" />
           </div>
           <div>
@@ -138,9 +156,16 @@ export function TraitDistribution({ nfts }: PortfolioAnalyticsProps) {
     },
   ];
 
+  const traitNames = traitEntries.map(([name]) => name).join(", ");
+  const radarAriaLabel = `Trait distribution radar chart showing relative counts for ${traitNames}`;
+
   return (
     <div className="grid gap-6 md:grid-cols-2 md:gap-8">
-      <div className="flex justify-center">
+      <div
+        aria-label={radarAriaLabel}
+        className="flex justify-center"
+        role="img"
+      >
         <RadarChart data={radarData} levels={4} metrics={metrics} size={340}>
           <RadarGrid showLabels={false} />
           <RadarAxis />
@@ -154,7 +179,7 @@ export function TraitDistribution({ nfts }: PortfolioAnalyticsProps) {
         <p className="text-muted-foreground text-sm">
           Trait counts across your portfolio
         </p>
-        <ul className="space-y-1.5">
+        <ul aria-label="Trait counts" className="space-y-1.5">
           {traitEntries.map(([name, count]) => (
             <li
               className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5"
