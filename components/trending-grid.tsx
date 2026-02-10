@@ -6,14 +6,12 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrendingNFT {
-  contract: {
-    address: string;
-    name?: string;
-    openSeaMetadata?: { collectionName?: string; imageUrl?: string };
-  };
   tokenId: string;
-  name?: string;
-  image?: { cachedUrl?: string; thumbnailUrl?: string };
+  name: string;
+  contract: string;
+  collection: string;
+  image: string;
+  floorPrice?: number;
 }
 
 const GRID_COUNT = 12;
@@ -61,17 +59,11 @@ export function TrendingGrid() {
           }
 
           const nft = nfts[index];
-          const imageUrl = nft.image?.cachedUrl || nft.image?.thumbnailUrl;
-          const name = nft.name || `#${nft.tokenId}`;
-          const collection =
-            nft.contract.openSeaMetadata?.collectionName ||
-            nft.contract.name ||
-            "Unknown";
 
           return (
             <Link
-              href={`/token/${nft.contract.address}/${nft.tokenId}`}
-              key={`${nft.contract.address}-${nft.tokenId}`}
+              href={`/token/${nft.contract}/${nft.tokenId}`}
+              key={`${nft.contract}-${nft.tokenId}`}
             >
               <motion.div
                 animate={{ opacity: 1 }}
@@ -84,14 +76,14 @@ export function TrendingGrid() {
                 }}
               >
                 <div className="aspect-square overflow-hidden bg-muted">
-                  {imageUrl ? (
+                  {nft.image ? (
                     /* biome-ignore lint/performance/noImgElement: external NFT images */
                     /* biome-ignore lint/correctness/useImageSize: sized by parent */
                     <img
-                      alt={name}
+                      alt={nft.name}
                       className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
                       loading="lazy"
-                      src={imageUrl}
+                      src={nft.image}
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center text-muted-foreground">
@@ -100,10 +92,15 @@ export function TrendingGrid() {
                   )}
                 </div>
                 <div className="space-y-1 p-4">
-                  <p className="truncate font-medium text-sm">{name}</p>
-                  <p className="truncate text-muted-foreground text-xs">
-                    {collection}
-                  </p>
+                  <p className="truncate font-medium text-sm">{nft.name}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="truncate text-muted-foreground text-xs">
+                      {nft.collection}
+                    </p>
+                    {nft.floorPrice && (
+                      <p className="font-mono text-xs">{nft.floorPrice} ETH</p>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </Link>

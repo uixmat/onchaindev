@@ -1,11 +1,11 @@
-import { getTopCollections } from "@/lib/alchemy";
+import { fetchTrendingNFTs } from "@/lib/data-source";
 
 export async function GET() {
   try {
-    const data = await getTopCollections();
+    const nfts = await fetchTrendingNFTs();
     return Response.json({
-      nfts: data.ownedNfts,
-      totalCount: data.totalCount,
+      nfts,
+      totalCount: nfts.length,
     });
   } catch (error) {
     console.error("Error fetching trending:", error);

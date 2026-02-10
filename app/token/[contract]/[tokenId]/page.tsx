@@ -1,9 +1,12 @@
 "use client";
 
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Award, ExternalLink, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { EthIcon } from "@/components/icons/eth";
 import { PageTransition } from "@/components/page-transition";
+import { PriceHistoryChart } from "@/components/price-history-chart";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,29 +16,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface NFTDetail {
-  contract: {
-    address: string;
-    name?: string;
-    openSeaMetadata?: {
-      collectionName?: string;
-      floorPrice?: number;
-      description?: string;
-    };
+interface NFTDetailResponse {
+  nft: {
+    tokenId: string;
+    name: string;
+    contract: string;
+    collection: string;
+    image: string;
+    rank?: number;
+    traits: Array<{ traitType: string; value: string; rarity?: number }>;
+    lastSale?: number;
+    listPrice?: number | null;
+    owner?: string;
+    description?: string;
+    floorPrice?: number;
   };
-  tokenId: string;
-  name?: string;
-  description?: string;
-  image?: {
-    cachedUrl?: string;
-    thumbnailUrl?: string;
-    originalUrl?: string;
-  };
-  raw?: {
-    metadata?: {
-      attributes?: Array<{ trait_type: string; value: string }>;
-    };
-  };
+  collection?: {
+    name: string;
+    creator: string;
+    mintedDate: string;
+    totalSupply: number;
+    floorPrice: number;
+    totalVolume: number;
+    owners: number;
+    ownerPercentage: number;
+    listedPercentage: number;
+  } | null;
+  priceHistory: Array<{ date: string; price: number }>;
+  sales: Array<{ date: string; price: number; marketplace: string }>;
 }
 
 interface PageProps {
@@ -44,18 +52,18 @@ interface PageProps {
 
 export default function TokenDetailPage({ params }: PageProps) {
   const { contract, tokenId } = use(params);
-  const [nft, setNft] = useState<NFTDetail | null>(null);
+  const [data, setData] = useState<NFTDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/nft-detail/${contract}/${tokenId}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
+      .then((d) => {
+        if (d.error) {
+          setError(d.error);
         } else {
-          setNft(data);
+          setData(d);
         }
         setLoading(false);
       })
@@ -74,7 +82,7 @@ export default function TokenDetailPage({ params }: PageProps) {
     );
   }
 
-  if (error || !nft) {
+  if (error || !data?.nft) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <h1 className="font-bold text-3xl">Token Not Found</h1>
@@ -91,14 +99,8 @@ export default function TokenDetailPage({ params }: PageProps) {
     );
   }
 
-  const imageUrl =
-    nft.image?.cachedUrl || nft.image?.originalUrl || nft.image?.thumbnailUrl;
-  const name = nft.name || `Token #${nft.tokenId}`;
-  const collection =
-    nft.contract.openSeaMetadata?.collectionName ||
-    nft.contract.name ||
-    "Unknown Collection";
-  const traits = nft.raw?.metadata?.attributes || [];
+  const { nft, collection, priceHistory, sales } = data;
+  const traits = nft.traits || [];
 
   return (
     <>
@@ -112,26 +114,87 @@ export default function TokenDetailPage({ params }: PageProps) {
           >
             <ArrowLeft className="size-4" />
           </Button>
-          <div>
-            <h1 className="font-semibold text-xl">{name}</h1>
-            <p className="text-muted-foreground text-sm">{collection}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-xl">{nft.name}</h1>
+              {nft.rank && (
+                <Badge className="gap-1" variant="secondary">
+                  <Award className="size-3" />
+                  Rank #{nft.rank}
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {nft.collection}
+              {collection?.creator && <span> by {collection.creator}</span>}
+            </p>
           </div>
+          <Button asChild size="sm" variant="outline">
+            <a
+              href={`https://opensea.io/assets/ethereum/${contract}/${tokenId}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <ExternalLink className="size-3" />
+              OpenSea
+            </a>
+          </Button>
         </div>
       </div>
 
-      {/* Content */}
       <PageTransition>
         <div className="mx-auto max-w-7xl p-6">
-          <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+          {/* Collection Stats Bar */}
+          {collection && (
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="rounded-lg border p-3">
+                <p className="text-muted-foreground text-xs">Floor Price</p>
+                <p className="flex items-center gap-1 font-mono font-semibold">
+                  <EthIcon height="14px" />
+                  {collection.floorPrice}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-muted-foreground text-xs">Total Volume</p>
+                <p className="flex items-center gap-1 font-mono font-semibold">
+                  <EthIcon height="14px" />
+                  {(collection.totalVolume / 1000).toFixed(0)}K
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-muted-foreground text-xs">Owners</p>
+                <p className="font-mono font-semibold">
+                  {collection.owners.toLocaleString()}{" "}
+                  <span className="text-muted-foreground text-xs">
+                    ({collection.ownerPercentage}%)
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-muted-foreground text-xs">Supply</p>
+                <p className="font-mono font-semibold">
+                  {collection.totalSupply.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-muted-foreground text-xs">Listed</p>
+                <p className="font-mono font-semibold">
+                  {collection.listedPercentage}%
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-8 lg:grid-cols-[500px_1fr]">
             {/* Image */}
             <div className="overflow-hidden rounded-xl border">
-              {imageUrl ? (
-                /* biome-ignore lint/performance/noImgElement: external NFT images */
-                /* biome-ignore lint/correctness/useImageSize: sized by parent */
+              {nft.image ? (
+                // biome-ignore lint/performance/noImgElement: external NFT
+                // biome-ignore lint/correctness/useImageSize: sized by parent
                 <img
-                  alt={name}
+                  alt={nft.name}
                   className="aspect-square w-full object-cover"
-                  src={imageUrl}
+                  src={nft.image}
                 />
               ) : (
                 <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
@@ -153,24 +216,51 @@ export default function TokenDetailPage({ params }: PageProps) {
                   </div>
                   <div>
                     <p className="text-muted-foreground text-sm">Collection</p>
-                    <p>{collection}</p>
+                    <p>{nft.collection}</p>
                   </div>
-                  {nft.contract.openSeaMetadata?.floorPrice && (
+                  {collection?.mintedDate && (
+                    <div>
+                      <p className="text-muted-foreground text-sm">Minted</p>
+                      <p>
+                        {new Date(collection.mintedDate).toLocaleDateString(
+                          "en-US",
+                          { month: "long", year: "numeric" }
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {nft.floorPrice && (
                     <div>
                       <p className="text-muted-foreground text-sm">
                         Floor Price
                       </p>
-                      <p className="font-mono font-semibold">
-                        {nft.contract.openSeaMetadata.floorPrice} ETH
+                      <p className="flex items-center gap-1 font-mono font-semibold">
+                        <EthIcon height="14px" />
+                        {nft.floorPrice}
+                      </p>
+                    </div>
+                  )}
+                  {nft.lastSale && (
+                    <div>
+                      <p className="text-muted-foreground text-sm">Last Sale</p>
+                      <p className="flex items-center gap-1 font-mono font-semibold">
+                        <EthIcon height="14px" />
+                        {nft.lastSale}
                       </p>
                     </div>
                   )}
                   <div>
                     <p className="text-muted-foreground text-sm">Contract</p>
                     <p className="break-all font-mono text-xs">
-                      {nft.contract.address}
+                      {nft.contract}
                     </p>
                   </div>
+                  {nft.owner && (
+                    <div>
+                      <p className="text-muted-foreground text-sm">Owner</p>
+                      <p className="break-all font-mono text-xs">{nft.owner}</p>
+                    </div>
+                  )}
                   {nft.description && (
                     <div>
                       <p className="text-muted-foreground text-sm">
@@ -191,16 +281,25 @@ export default function TokenDetailPage({ params }: PageProps) {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       {traits.map((trait) => (
                         <div
-                          className="space-y-1 rounded-lg border p-3"
-                          key={`${trait.trait_type}-${trait.value}`}
+                          className="flex items-center justify-between rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50"
+                          key={`${trait.traitType}-${trait.value}`}
                         >
-                          <p className="text-muted-foreground text-xs uppercase">
-                            {trait.trait_type}
-                          </p>
-                          <p className="font-medium">{trait.value}</p>
+                          <span className="text-muted-foreground text-xs uppercase">
+                            {trait.traitType}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {trait.value}
+                            </span>
+                            {trait.rarity && (
+                              <span className="text-muted-foreground text-xs">
+                                {trait.rarity}%
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -209,6 +308,21 @@ export default function TokenDetailPage({ params }: PageProps) {
               )}
             </div>
           </div>
+
+          {/* Price History */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Price History</CardTitle>
+              <CardDescription>
+                {sales.length > 0
+                  ? `${sales.length} sales over 90 days`
+                  : "90-day price history"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PriceHistoryChart history={priceHistory} sales={sales} />
+            </CardContent>
+          </Card>
         </div>
       </PageTransition>
     </>

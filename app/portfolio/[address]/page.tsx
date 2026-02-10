@@ -4,23 +4,33 @@ import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { EthIcon } from "@/components/icons/eth";
 import { PageTransition } from "@/components/page-transition";
+import {
+  PortfolioStats,
+  TraitDistribution,
+} from "@/components/portfolio-analytics";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface NFTData {
-  contract: {
-    address: string;
-    name?: string;
-    openSeaMetadata?: {
-      collectionName?: string;
-      imageUrl?: string;
-      floorPrice?: number;
-    };
-  };
   tokenId: string;
-  name?: string;
-  image?: { cachedUrl?: string; thumbnailUrl?: string };
+  name: string;
+  contract: string;
+  collection: string;
+  image: string;
+  rank?: number;
+  traits: Array<{ traitType: string; value: string; rarity?: number }>;
+  lastSale?: number;
+  listPrice?: number | null;
+  floorPrice?: number;
 }
 
 interface PageProps {
@@ -28,48 +38,6 @@ interface PageProps {
 }
 
 const GRID_COUNT = 12;
-
-function NFTCard({ nft }: { nft: NFTData }) {
-  const imageUrl = nft.image?.cachedUrl || nft.image?.thumbnailUrl;
-  const name = nft.name || `#${nft.tokenId}`;
-  const collection =
-    nft.contract.openSeaMetadata?.collectionName ||
-    nft.contract.name ||
-    "Unknown";
-
-  return (
-    <Link href={`/token/${nft.contract.address}/${nft.tokenId}`}>
-      <motion.div
-        className="group cursor-pointer overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-lg"
-        whileHover={{
-          scale: 1.03,
-          transition: { type: "spring", stiffness: 400, damping: 20 },
-        }}
-      >
-        <div className="aspect-square overflow-hidden bg-muted">
-          {imageUrl ? (
-            /* biome-ignore lint/performance/noImgElement: external NFT images */
-            /* biome-ignore lint/correctness/useImageSize: sized by parent */
-            <img
-              alt={name}
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
-              src={imageUrl}
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center text-muted-foreground text-sm">
-              No Image
-            </div>
-          )}
-        </div>
-        <div className="space-y-1 p-4">
-          <p className="truncate font-medium text-sm">{name}</p>
-          <p className="truncate text-muted-foreground text-xs">{collection}</p>
-        </div>
-      </motion.div>
-    </Link>
-  );
-}
 
 function CardSkeleton() {
   return (
@@ -155,7 +123,7 @@ export default function PortfolioPage({ params }: PageProps) {
             <div className="flex flex-col items-center justify-center gap-4 py-16">
               <h2 className="font-bold text-2xl">No NFTs Found</h2>
               <p className="text-muted-foreground">
-                This wallet doesn&apos;t have any NFTs on Ethereum mainnet.
+                This wallet doesn&apos;t have any NFTs.
               </p>
               <Button asChild>
                 <Link href="/">
@@ -166,20 +134,89 @@ export default function PortfolioPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Grid: skeletons while loading, real cards when resolved (no animation on swap) */}
+          {/* Main content */}
           {!error && (loading || nfts.length > 0) && (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {loading
-                ? Array.from({ length: GRID_COUNT }).map((_, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
-                    <CardSkeleton key={`skel-${i}`} />
-                  ))
-                : nfts.map((nft) => (
-                    <NFTCard
-                      key={`${nft.contract.address}-${nft.tokenId}`}
-                      nft={nft}
-                    />
-                  ))}
+            <div className="space-y-6">
+              {/* Stats Row */}
+              {!loading && <PortfolioStats nfts={nfts} />}
+
+              {/* Trait Distribution (full width) */}
+              {!loading && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Trait Distribution</CardTitle>
+                    <CardDescription>
+                      Aggregated traits across {totalCount} NFTs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TraitDistribution nfts={nfts} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* NFT Grid (full width) */}
+              <div>
+                <h2 className="mb-4 font-semibold text-xl">Collection</h2>
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {loading
+                    ? Array.from({ length: GRID_COUNT }).map((_, i) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+                        <CardSkeleton key={`skel-${i}`} />
+                      ))
+                    : nfts.map((nft) => (
+                        <Link
+                          href={`/token/${nft.contract}/${nft.tokenId}`}
+                          key={`${nft.contract}-${nft.tokenId}`}
+                        >
+                          <motion.div
+                            className="group cursor-pointer overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-lg"
+                            whileHover={{
+                              scale: 1.03,
+                              transition: {
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 20,
+                              },
+                            }}
+                          >
+                            <div className="aspect-square overflow-hidden bg-muted">
+                              {nft.image ? (
+                                // biome-ignore lint/performance/noImgElement: NFT image
+                                // biome-ignore lint/correctness/useImageSize: sized by parent
+                                <img
+                                  alt={nft.name}
+                                  className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                  loading="lazy"
+                                  src={nft.image}
+                                />
+                              ) : (
+                                <div className="flex size-full items-center justify-center text-muted-foreground text-sm">
+                                  No Image
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1 p-4">
+                              <p className="truncate font-medium text-sm">
+                                {nft.name}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <p className="truncate text-muted-foreground text-xs">
+                                  {nft.collection}
+                                </p>
+                                {nft.floorPrice && (
+                                  <p className="flex items-center gap-0.5 font-mono text-xs">
+                                    <EthIcon height="10px" />
+                                    {nft.floorPrice}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        </Link>
+                      ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

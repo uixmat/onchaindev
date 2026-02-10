@@ -1,4 +1,4 @@
-import { getContractsForOwner, getNFTsForOwner } from "@/lib/alchemy";
+import { fetchNFTsForAddress } from "@/lib/data-source";
 
 export async function GET(
   _request: Request,
@@ -7,16 +7,8 @@ export async function GET(
   const { address } = await params;
 
   try {
-    const [nftsData, collectionsData] = await Promise.all([
-      getNFTsForOwner(address),
-      getContractsForOwner(address),
-    ]);
-
-    return Response.json({
-      nfts: nftsData.ownedNfts,
-      totalCount: nftsData.totalCount,
-      collections: collectionsData.contracts.filter((c) => !c.isSpam),
-    });
+    const data = await fetchNFTsForAddress(address);
+    return Response.json(data);
   } catch (error) {
     console.error("Error fetching NFTs:", error);
     return Response.json({ error: "Failed to fetch NFTs" }, { status: 500 });

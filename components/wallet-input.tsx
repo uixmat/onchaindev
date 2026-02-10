@@ -3,8 +3,12 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function WalletInput() {
   const [address, setAddress] = useState("");
@@ -18,18 +22,26 @@ export function WalletInput() {
   };
 
   return (
-    <form className="flex gap-2" onSubmit={handleSubmit}>
-      <Input
-        className="flex-1"
-        onChange={(e) => setAddress(e.target.value)}
-        placeholder="Enter wallet address or ENS..."
-        type="text"
-        value={address}
-      />
-      <Button disabled={!address.trim()} type="submit">
-        <Search className="size-4" />
-        View
-      </Button>
+    <form onSubmit={handleSubmit}>
+      <InputGroup className="bg-black/10 backdrop-blur-sm dark:bg-black/50">
+        <InputGroupInput
+          aria-label="Enter wallet address or ENS"
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Enter wallet address or ENS..."
+          value={address}
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            disabled={!address.trim()}
+            size="xs"
+            type="submit"
+            variant="default"
+          >
+            <Search className="size-3.5" />
+            <span className="sr-only">View</span>
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   );
 }

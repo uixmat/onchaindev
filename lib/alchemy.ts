@@ -87,18 +87,93 @@ export async function getContractsForOwner(
   return res.json();
 }
 
-export async function getTopCollections(): Promise<{
-  ownedNfts: AlchemyNFT[];
-  totalCount: number;
-}> {
-  // Fetch NFTs from a well-known collector to show "trending" data
-  // Using a known whale address for variety
+export interface NFTSale {
+  sellerAddress: string;
+  buyerAddress: string;
+  taker: string;
+  sellerFee: { amount: string; decimals: number };
+  protocolFee: { amount: string; decimals: number };
+  royaltyFee: { amount: string; decimals: number };
+  marketplace: string;
+  blockNumber: number;
+  logIndex: number;
+  bundleIndex: number;
+  transactionHash: string;
+  blockTimestamp: string;
+}
+
+export async function getNFTSales(
+  contract: string,
+  tokenId: string
+): Promise<{ nftSales: NFTSale[] }> {
   const res = await fetch(
-    `${BASE_URL}/getNFTsForOwner?owner=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&withMetadata=true&pageSize=50`,
+    `${BASE_URL}/getNFTSales?contractAddress=${contract}&tokenId=${tokenId}&limit=20`,
     { next: { revalidate: 300 } }
   );
   if (!res.ok) {
     throw new Error(`Alchemy API error: ${res.status}`);
   }
   return res.json();
+}
+
+export async function getFloorPrice(contract: string): Promise<{
+  openSea?: { floorPrice: number; priceCurrency: string };
+  looksRare?: { floorPrice: number; priceCurrency: string };
+}> {
+  const res = await fetch(
+    `${BASE_URL}/getFloorPrice?contractAddress=${contract}`,
+    { next: { revalidate: 300 } }
+  );
+  if (!res.ok) {
+    throw new Error(`Alchemy API error: ${res.status}`);
+  }
+  return res.json();
+}
+
+// Well-known collectors with diverse NFT holdings
+const FEATURED_WALLETS = [
+  "vitalik.eth", // Vitalik Buterin
+  "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459", // Pranksy
+  "0xC5F59709974262c4AFacc5386287820bDBC7eB3A", // Dingaling
+  "0x54BE3a794282C030b15E43416f0516611a6D067b", // Seedphrase
+  "0xce90a7949bb78892f159f428d0dc23a8e3b2e02b", // Punk6529
+];
+
+export async function getTopCollections(): Promise<{
+  ownedNfts: AlchemyNFT[];
+  totalCount: number;
+}> {
+  // Pick 3 random wallets to fetch from
+  const shuffled = [...FEATURED_WALLETS].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 3);
+
+  // Fetch 16 NFTs from each selected wallet in parallel
+  const results = await Promise.allSettled(
+    selected.map(async (wallet) => {
+      const res = await fetch(
+        `${BASE_URL}/getNFTsForOwner?owner=${wallet}&withMetadata=true&pageSize=16`,
+        { next: { revalidate: 300 } }
+      );
+      if (!res.ok) {
+        return { ownedNfts: [] };
+      }
+      return res.json();
+    })
+  );
+
+  // Combine and shuffle all NFTs
+  const allNfts: AlchemyNFT[] = [];
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value.ownedNfts) {
+      allNfts.push(...result.value.ownedNfts);
+    }
+  }
+
+  // Shuffle combined results
+  const shuffledNfts = allNfts.sort(() => Math.random() - 0.5);
+
+  return {
+    ownedNfts: shuffledNfts.slice(0, 48),
+    totalCount: shuffledNfts.length,
+  };
 }

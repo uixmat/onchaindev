@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LogIn, LogOut } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/theme-toggle";
@@ -59,6 +59,12 @@ export function AppHeader() {
               <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <LayoutDashboard className="size-4" />
                 Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push(`/portfolio/${user.id}`)}
+              >
+                <User className="size-4" />
+                View Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
