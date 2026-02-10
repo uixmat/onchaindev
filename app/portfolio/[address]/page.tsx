@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { EthIcon } from "@/components/icons/eth";
@@ -182,13 +183,13 @@ export default function PortfolioPage({ params }: PageProps) {
                           >
                             <div className="aspect-square overflow-hidden bg-muted">
                               {nft.image ? (
-                                // biome-ignore lint/performance/noImgElement: NFT image
-                                // biome-ignore lint/correctness/useImageSize: sized by parent
-                                <img
+                                <Image
                                   alt={nft.name}
                                   className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                  height={500}
                                   loading="lazy"
                                   src={nft.image}
+                                  width={500}
                                 />
                               ) : (
                                 <div className="flex size-full items-center justify-center text-muted-foreground text-sm">
