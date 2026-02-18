@@ -14,11 +14,11 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { HoloCard } from "@/components/holo-card";
 import { EthIcon } from "@/components/icons/eth";
+import { NftMedia } from "@/components/nft-media";
 import { PageTransition } from "@/components/page-transition";
 import { PriceHistoryChart } from "@/components/price-history-chart";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,14 @@ interface NFTDetailResponse {
   } | null;
   priceHistory: Array<{ date: string; price: number }>;
   sales: Array<{ date: string; price: number; marketplace: string }>;
+  relatedNfts?: Array<{
+    tokenId: string;
+    name: string;
+    contract: string;
+    collection: string;
+    image: string;
+    floorPrice?: number;
+  }>;
 }
 
 interface PageProps {
@@ -128,7 +136,7 @@ export default function TokenDetailPage({ params }: PageProps) {
     );
   }
 
-  const { nft, collection, priceHistory, sales } = data;
+  const { nft, collection, priceHistory, sales, relatedNfts } = data;
   const traits = nft.traits || [];
 
   const formatUsd = (eth: number) =>
@@ -183,13 +191,13 @@ export default function TokenDetailPage({ params }: PageProps) {
             <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
               <Card className="py-4">
                 <CardContent className="flex items-center gap-3 px-4 py-0">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Coins className="size-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="flex items-center gap-1 font-bold font-mono text-2xl">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1 truncate font-bold font-mono text-2xl">
                       <EthIcon height="18px" />
-                      {collection.floorPrice}
+                      {Number(collection.floorPrice).toFixed(2)}
                     </p>
                     <p className="text-muted-foreground text-xs">Floor Price</p>
                   </div>
@@ -197,11 +205,11 @@ export default function TokenDetailPage({ params }: PageProps) {
               </Card>
               <Card className="py-4">
                 <CardContent className="flex items-center gap-3 px-4 py-0">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <TrendingUp className="size-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="flex items-center gap-1 font-bold font-mono text-2xl">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1 truncate font-bold font-mono text-2xl">
                       <EthIcon height="18px" />
                       {(collection.totalVolume / 1000).toFixed(0)}K
                     </p>
@@ -213,11 +221,11 @@ export default function TokenDetailPage({ params }: PageProps) {
               </Card>
               <Card className="py-4">
                 <CardContent className="flex items-center gap-3 px-4 py-0">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Users className="size-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-bold text-2xl">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-2xl">
                       {collection.owners.toLocaleString()}{" "}
                       <span className="font-normal text-muted-foreground text-xs">
                         ({collection.ownerPercentage}%)
@@ -229,11 +237,11 @@ export default function TokenDetailPage({ params }: PageProps) {
               </Card>
               <Card className="py-4">
                 <CardContent className="flex items-center gap-3 px-4 py-0">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Layers className="size-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-bold text-2xl">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-2xl">
                       {collection.totalSupply.toLocaleString()}
                     </p>
                     <p className="text-muted-foreground text-xs">Supply</p>
@@ -242,11 +250,11 @@ export default function TokenDetailPage({ params }: PageProps) {
               </Card>
               <Card className="py-4">
                 <CardContent className="flex items-center gap-3 px-4 py-0">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Percent className="size-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-bold text-2xl">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-2xl">
                       {collection.listedPercentage}%
                     </p>
                     <p className="text-muted-foreground text-xs">Listed</p>
@@ -282,7 +290,7 @@ export default function TokenDetailPage({ params }: PageProps) {
                     }}
                   >
                     <HoloCard>
-                      <Image
+                      <NftMedia
                         alt={nft.name}
                         className="aspect-square w-full object-cover"
                         height={500}
@@ -491,17 +499,78 @@ export default function TokenDetailPage({ params }: PageProps) {
           {/* Price History */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Price History</CardTitle>
+              <CardTitle>Collection Sales</CardTitle>
               <CardDescription>
-                {sales.length > 0
-                  ? `${sales.length} sales over 90 days`
-                  : "90-day price history"}
+                {priceHistory.length > 0
+                  ? `${priceHistory.length} recent sales across ${nft.collection}`
+                  : "No recent sales data"}
+                {sales.length > 0 &&
+                  ` · ${sales.length} sale${sales.length !== 1 ? "s" : ""} for this NFT`}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <PriceHistoryChart history={priceHistory} sales={sales} />
             </CardContent>
           </Card>
+
+          {relatedNfts && relatedNfts.length > 0 && (
+            <div className="mt-8">
+              <h2 className="mb-4 font-semibold text-xl">
+                More from {nft.collection}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                {relatedNfts.map((related, index) => (
+                  <Link
+                    href={`/token/${related.contract}/${related.tokenId}`}
+                    key={`${related.contract}-${related.tokenId}`}
+                  >
+                    <motion.div
+                      animate={{ opacity: 1 }}
+                      className="group cursor-pointer overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-lg"
+                      initial={{ opacity: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.04 }}
+                      whileHover={{
+                        scale: 1.03,
+                        transition: {
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 20,
+                        },
+                      }}
+                    >
+                      <div className="aspect-square overflow-hidden bg-muted">
+                        {related.image ? (
+                          <NftMedia
+                            alt={related.name}
+                            className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            height={300}
+                            src={related.image}
+                            width={300}
+                          />
+                        ) : (
+                          <div className="flex size-full items-center justify-center text-muted-foreground text-sm">
+                            No Image
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1 p-3">
+                        <p className="truncate font-medium text-sm">
+                          {related.name}
+                        </p>
+                        {related.floorPrice != null &&
+                          related.floorPrice > 0 && (
+                            <p className="flex items-center gap-0.5 font-mono text-xs">
+                              <EthIcon height="10px" />
+                              {related.floorPrice.toFixed(2)}
+                            </p>
+                          )}
+                      </div>
+                    </motion.div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </PageTransition>
     </>

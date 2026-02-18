@@ -50,8 +50,8 @@ function generateValueHistory(
 
 // Mock portfolios
 const MOCK_PORTFOLIOS: Record<string, PortfolioData> = {
-  "vitalik.eth": {
-    address: "vitalik.eth",
+  "dfinzer.eth": {
+    address: "dfinzer.eth",
     totalValue: 892.5,
     totalNFTs: 47,
     valueHistory: generateValueHistory(892.5),
@@ -198,8 +198,8 @@ export function getMockPortfolio(address: string): PortfolioData | null {
   const normalized = address.toLowerCase();
 
   // Check for known addresses
-  if (normalized === "vitalik.eth" || normalized.includes("vitalik")) {
-    return MOCK_PORTFOLIOS["vitalik.eth"];
+  if (normalized === "dfinzer.eth" || normalized.includes("dfinzer")) {
+    return MOCK_PORTFOLIOS["dfinzer.eth"];
   }
 
   if (normalized === "whale" || normalized.includes("whale")) {

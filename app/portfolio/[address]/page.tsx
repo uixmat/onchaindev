@@ -2,10 +2,10 @@
 
 import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
-import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { EthIcon } from "@/components/icons/eth";
+import { NftMedia } from "@/components/nft-media";
 import { PageTransition } from "@/components/page-transition";
 import {
   PortfolioStats,
@@ -191,11 +191,10 @@ export default function PortfolioPage({ params }: PageProps) {
                           >
                             <div className="aspect-square overflow-hidden bg-muted">
                               {nft.image ? (
-                                <Image
+                                <NftMedia
                                   alt={nft.name}
                                   className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
                                   height={500}
-                                  loading="lazy"
                                   src={nft.image}
                                   width={500}
                                 />

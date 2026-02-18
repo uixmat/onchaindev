@@ -99,7 +99,7 @@ export function XAxis({ numTicks = 5, tickerHalfWidth = 50 }: XAxisProps) {
       dates.push(new Date(time));
     }
 
-    return dates.map((date) => ({
+    const labels = dates.map((date) => ({
       date,
       x: (xScale(date) ?? 0) + margin.left,
       label: date.toLocaleDateString("en-US", {
@@ -107,6 +107,16 @@ export function XAxis({ numTicks = 5, tickerHalfWidth = 50 }: XAxisProps) {
         day: "numeric",
       }),
     }));
+
+    // Deduplicate adjacent labels
+    const seen = new Set<string>();
+    return labels.map((item) => {
+      if (seen.has(item.label)) {
+        return { ...item, label: "" };
+      }
+      seen.add(item.label);
+      return item;
+    });
   }, [xScale, margin.left, numTicks]);
 
   const isHovering = tooltipData !== null;
@@ -124,11 +134,11 @@ export function XAxis({ numTicks = 5, tickerHalfWidth = 50 }: XAxisProps) {
 
   return createPortal(
     <div className="pointer-events-none absolute inset-0">
-      {labelsToShow.map((item) => (
+      {labelsToShow.map((item, i) => (
         <XAxisLabel
           crosshairX={crosshairX}
           isHovering={isHovering}
-          key={`${item.label}-${item.x}`}
+          key={`tick-${i}`}
           label={item.label}
           tickerHalfWidth={tickerHalfWidth}
           x={item.x}

@@ -170,25 +170,33 @@ function ChartInner({
 
   // Y scale - computed from extracted line configs (available immediately)
   const yScale = useMemo(() => {
-    // Find max value across all line dataKeys
     let maxValue = 0;
+    let minValue = Number.POSITIVE_INFINITY;
     for (const line of lines) {
       for (const d of data) {
         const value = d[line.dataKey];
-        if (typeof value === "number" && value > maxValue) {
-          maxValue = value;
+        if (typeof value === "number") {
+          if (value > maxValue) maxValue = value;
+          if (value < minValue) minValue = value;
         }
       }
     }
 
-    // Ensure we have a valid domain even if no data
     if (maxValue === 0) {
       maxValue = 100;
     }
+    if (!Number.isFinite(minValue)) {
+      minValue = 0;
+    }
+
+    const range = maxValue - minValue;
+    const padding = range > 0 ? range * 0.15 : maxValue * 0.1;
+    const domainMin =
+      range / maxValue < 0.3 ? Math.max(0, minValue - padding) : 0;
 
     return scaleLinear({
       range: [innerHeight, 0],
-      domain: [0, maxValue * 1.1], // Add 10% padding
+      domain: [domainMin, maxValue + padding],
       nice: true,
     });
   }, [innerHeight, data, lines]);

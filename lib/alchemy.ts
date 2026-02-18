@@ -132,7 +132,7 @@ export async function getFloorPrice(contract: string): Promise<{
 
 // Well-known collectors with diverse NFT holdings
 const FEATURED_WALLETS = [
-  "vitalik.eth", // Vitalik Buterin
+  "dfinzer.eth", // Devin Finzer, OpenSea CEO
   "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459", // Pranksy
   "0xC5F59709974262c4AFacc5386287820bDBC7eB3A", // Dingaling
   "0x54BE3a794282C030b15E43416f0516611a6D067b", // Seedphrase
