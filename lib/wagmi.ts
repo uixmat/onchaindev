@@ -21,9 +21,11 @@ export const anvil = {
   },
 } as const satisfies Chain;
 
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 export const config = getDefaultConfig({
   appName: "onchain",
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
-  chains: [anvil, mainnet],
+  chains: IS_PRODUCTION ? [mainnet] : [anvil, mainnet],
   ssr: true,
 });

@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { NftMedia } from "@/components/nft-media";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrendingNFT {
@@ -77,12 +78,9 @@ export function TrendingGrid() {
               >
                 <div className="aspect-square overflow-hidden bg-muted">
                   {nft.image ? (
-                    /* biome-ignore lint/performance/noImgElement: external NFT images */
-                    /* biome-ignore lint/correctness/useImageSize: sized by parent */
-                    <img
+                    <NftMedia
                       alt={nft.name}
                       className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      loading="lazy"
                       src={nft.image}
                     />
                   ) : (

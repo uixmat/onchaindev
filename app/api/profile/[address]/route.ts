@@ -1,7 +1,7 @@
 import { createPublicClient, http, isAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
-import { fetchNFTsForAddress } from "@/lib/data-source";
+import { getAccountProfile } from "@/lib/opensea";
 
 const client = createPublicClient({
   chain: mainnet,
@@ -28,10 +28,10 @@ export async function GET(
       address = resolved;
     }
 
-    const data = await fetchNFTsForAddress(address);
-    return Response.json(data);
+    const profile = await getAccountProfile(address);
+    return Response.json(profile);
   } catch (error) {
-    console.error("Error fetching NFTs:", error);
-    return Response.json({ error: "Failed to fetch NFTs" }, { status: 500 });
+    console.error("Error fetching profile:", error);
+    return Response.json({ error: "Failed to fetch profile" }, { status: 500 });
   }
 }

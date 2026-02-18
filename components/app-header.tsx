@@ -1,8 +1,9 @@
 "use client";
 
-import { LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { authClient } from "@/lib/auth-client";
 
 export function AppHeader() {
   const { data: session } = authClient.useSession();
+  const { address, isConnected } = useAccount();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -60,12 +62,19 @@ export function AppHeader() {
                 <LayoutDashboard className="size-4" />
                 Dashboard
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => router.push(`/portfolio/${user.id}`)}
-              >
-                <User className="size-4" />
-                View Profile
-              </DropdownMenuItem>
+              {isConnected && address ? (
+                <DropdownMenuItem
+                  onClick={() => router.push(`/portfolio/${address}`)}
+                >
+                  <Wallet className="size-4" />
+                  My Portfolio
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                  <User className="size-4" />
+                  Connect Wallet
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"

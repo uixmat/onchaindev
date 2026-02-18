@@ -91,7 +91,7 @@ export function EnsInput() {
       <div className="flex gap-2">
         <Input
           onChange={(e) => setEnsName(e.target.value)}
-          placeholder="vitalik.eth or 0x..."
+          placeholder="dfinzer.eth or 0x..."
           value={ensName}
         />
         <Button

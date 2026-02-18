@@ -18,7 +18,7 @@ export function Hero() {
           <div className="mx-auto mt-8 max-w-md">
             <WalletInput />
             <p className="mt-2 text-white/50 text-xs">
-              Try: vitalik.eth or any Ethereum address
+              Try: dfinzer.eth or any OpenSea user address
             </p>
           </div>
         </div>

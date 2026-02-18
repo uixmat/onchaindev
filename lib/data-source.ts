@@ -1,11 +1,3 @@
-import {
-  getContractsForOwner,
-  getFloorPrice,
-  getNFTMetadata,
-  getNFTSales,
-  getNFTsForOwner,
-  getTopCollections,
-} from "./alchemy";
 import { MAYC_CONTRACT, maycCollection } from "./mock/collection";
 import { getMockNFT, mockNFTs } from "./mock/nfts";
 import type { PricePoint, SaleEvent } from "./mock/price-history";
@@ -13,6 +5,17 @@ import {
   generateCollectionPriceHistory,
   generateNFTSaleHistory,
 } from "./mock/price-history";
+import {
+  getCollection,
+  getCollectionNFTs,
+  getCollectionStats,
+  getEventsByCollection,
+  getEventsByNFT,
+  getNFTDetail,
+  getNFTsByAccount,
+  listCollections,
+  type OpenSeaNFT,
+} from "./opensea";
 
 export type { CollectionData } from "./mock/collection";
 export type { PricePoint, SaleEvent } from "./mock/price-history";
@@ -29,6 +32,7 @@ export interface NFTData {
   name: string;
   contract: string;
   collection: string;
+  collectionSlug?: string;
   image: string;
   rank?: number;
   traits: Array<{
@@ -43,6 +47,29 @@ export interface NFTData {
   owner?: string;
   description?: string;
   floorPrice?: number;
+  openseaUrl?: string;
+}
+
+// ---- Helpers ----
+
+function openSeaNFTToUnified(nft: OpenSeaNFT, floorPrice?: number): NFTData {
+  return {
+    tokenId: nft.identifier,
+    name: nft.name || `#${nft.identifier}`,
+    contract: nft.contract,
+    collection: nft.collection,
+    collectionSlug: nft.collection,
+    image: nft.display_image_url || nft.image_url || "",
+    rank: nft.rarity?.rank,
+    traits: (nft.traits || []).map((t) => ({
+      traitType: t.trait_type,
+      value: t.value,
+    })),
+    description: nft.description ?? undefined,
+    floorPrice,
+    openseaUrl: nft.opensea_url,
+    owner: nft.owners?.[0]?.address,
+  };
 }
 
 // ---- Data fetchers ----
@@ -58,32 +85,28 @@ export async function fetchNFTsForAddress(address: string): Promise<{
     };
   }
 
-  const [nftsData] = await Promise.all([
-    getNFTsForOwner(address),
-    getContractsForOwner(address),
-  ]);
+  const data = await getNFTsByAccount("ethereum", address, 50);
 
-  const nfts: NFTData[] = nftsData.ownedNfts.map((nft) => ({
-    tokenId: nft.tokenId,
-    name: nft.name || `#${nft.tokenId}`,
-    contract: nft.contract.address,
-    collection:
-      nft.contract.openSeaMetadata?.collectionName ||
-      nft.contract.name ||
-      "Unknown",
-    image: nft.image?.cachedUrl || nft.image?.thumbnailUrl || "",
-    traits: (nft.raw?.metadata?.attributes || []).map((a) => ({
-      traitType: a.trait_type,
-      value: a.value,
-    })),
-    floorPrice: nft.contract.openSeaMetadata?.floorPrice,
-    description: nft.description,
-  }));
+  const slugs = [...new Set(data.nfts.map((n) => n.collection))];
+  const statsMap = new Map<string, number>();
 
-  return {
-    nfts: nfts.filter((n) => n.image),
-    totalCount: nftsData.totalCount,
-  };
+  const statsResults = await Promise.allSettled(
+    slugs.slice(0, 20).map(async (slug) => {
+      const stats = await getCollectionStats(slug);
+      return { slug, floor: stats.total.floor_price };
+    })
+  );
+  for (const r of statsResults) {
+    if (r.status === "fulfilled") {
+      statsMap.set(r.value.slug, r.value.floor);
+    }
+  }
+
+  const nfts = data.nfts
+    .filter((n) => n.display_image_url || n.image_url)
+    .map((n) => openSeaNFTToUnified(n, statsMap.get(n.collection)));
+
+  return { nfts, totalCount: nfts.length };
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: data fetching with fallbacks
@@ -95,11 +118,18 @@ export async function fetchNFTDetail(
   collection: CollectionData | null;
   priceHistory: PricePoint[];
   sales: SaleEvent[];
+  relatedNfts: NFTData[];
 }> {
   if (USE_MOCK) {
     const mock = getMockNFT(contract, tokenId);
     if (!mock) {
-      return { nft: null, collection: null, priceHistory: [], sales: [] };
+      return {
+        nft: null,
+        collection: null,
+        priceHistory: [],
+        sales: [],
+        relatedNfts: [],
+      };
     }
     const { history, sales } = generateNFTSaleHistory(tokenId);
     return {
@@ -107,133 +137,207 @@ export async function fetchNFTDetail(
       collection: maycCollection,
       priceHistory: history,
       sales,
+      relatedNfts: [],
     };
   }
 
-  // API mode
   try {
-    const [nftRes, salesRes, floorRes] = await Promise.allSettled([
-      getNFTMetadata(contract, tokenId),
-      getNFTSales(contract, tokenId),
-      getFloorPrice(contract),
+    const detail = await getNFTDetail("ethereum", contract, tokenId);
+    const osNft = detail.nft;
+    if (!osNft) {
+      return {
+        nft: null,
+        collection: null,
+        priceHistory: [],
+        sales: [],
+        relatedNfts: [],
+      };
+    }
+
+    let floorPrice: number | undefined;
+    let collectionData: CollectionData | null = null;
+
+    const [statsRes, collRes] = await Promise.allSettled([
+      getCollectionStats(osNft.collection),
+      getCollection(osNft.collection),
     ]);
 
-    const alchemyNft = nftRes.status === "fulfilled" ? nftRes.value : null;
-    if (!alchemyNft) {
-      return { nft: null, collection: null, priceHistory: [], sales: [] };
+    if (statsRes.status === "fulfilled") {
+      floorPrice = statsRes.value.total.floor_price;
     }
 
-    const nft: NFTData = {
-      tokenId: alchemyNft.tokenId,
-      name: alchemyNft.name || `Token #${alchemyNft.tokenId}`,
-      contract: alchemyNft.contract.address,
-      collection:
-        alchemyNft.contract.openSeaMetadata?.collectionName ||
-        alchemyNft.contract.name ||
-        "Unknown",
-      image:
-        alchemyNft.image?.cachedUrl ||
-        alchemyNft.image?.originalUrl ||
-        alchemyNft.image?.thumbnailUrl ||
-        "",
-      traits: (alchemyNft.raw?.metadata?.attributes || []).map((a) => {
-        const floor =
-          (floorRes.status === "fulfilled"
-            ? floorRes.value.openSea?.floorPrice
-            : null) ?? alchemyNft.contract.openSeaMetadata?.floorPrice;
-        return {
-          traitType: a.trait_type,
-          value: a.value,
-          ethValue: typeof floor === "number" ? floor : undefined,
-        };
-      }),
-      floorPrice:
-        (floorRes.status === "fulfilled"
-          ? floorRes.value.openSea?.floorPrice
-          : null) ?? alchemyNft.contract.openSeaMetadata?.floorPrice,
-      description:
-        alchemyNft.description ||
-        alchemyNft.contract.openSeaMetadata?.description,
-    };
-
-    const rawSales =
-      salesRes.status === "fulfilled" ? salesRes.value.nftSales : [];
-
-    // Convert Alchemy sales to our format
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const genesisTs = 1_438_269_973;
-    const sales: SaleEvent[] = rawSales.map((s) => {
-      const ts = genesisTs + s.blockNumber * 12;
-      const price =
-        Number.parseInt(s.sellerFee.amount, 10) /
-        10 ** (s.sellerFee.decimals || 18);
-      return {
-        date: new Date(ts * 1000),
-        price: Number(price.toFixed(4)),
-        marketplace: s.marketplace || "Unknown",
-        from: s.sellerAddress,
-        to: s.buyerAddress,
+    if (collRes.status === "fulfilled") {
+      const c = collRes.value;
+      const stats =
+        statsRes.status === "fulfilled" ? statsRes.value.total : null;
+      collectionData = {
+        contract,
+        name: c.name,
+        symbol: "",
+        creator: c.owner,
+        description: c.description,
+        mintedDate: "",
+        totalSupply: c.total_supply,
+        floorPrice: floorPrice ?? 0,
+        totalVolume: stats?.volume ?? 0,
+        owners: stats?.num_owners ?? 0,
+        ownerPercentage:
+          stats && c.total_supply
+            ? Math.round((stats.num_owners / c.total_supply) * 100 * 10) / 10
+            : 0,
+        listedPercentage: 0,
+        imageUrl: c.image_url,
+        bannerUrl: c.banner_image_url,
+        externalUrl: c.project_url || c.opensea_url,
+        traitCategories: [],
       };
-    });
+    }
 
-    // Build daily history from sales
-    const sortedSales = [...sales]
-      .filter((s) => s.price > 0)
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    const nft = openSeaNFTToUnified(osNft, floorPrice);
+
+    const [nftEventsRes, collEventsRes] = await Promise.allSettled([
+      getEventsByNFT("ethereum", contract, tokenId, "sale", 20),
+      getEventsByCollection(osNft.collection, "sale", 200),
+    ]);
+
+    const nftSales: SaleEvent[] = [];
+    if (nftEventsRes.status === "fulfilled") {
+      for (const e of nftEventsRes.value.asset_events) {
+        if (!e.payment?.quantity) {
+          continue;
+        }
+        const price =
+          Number(e.payment.quantity) / 10 ** (e.payment.decimals || 18);
+        if (price > 0) {
+          nftSales.push({
+            date: new Date(e.event_timestamp * 1000),
+            price: Number(price.toFixed(4)),
+            marketplace: "OpenSea",
+            from: e.seller,
+            to: e.buyer,
+          });
+        }
+      }
+    }
 
     const priceHistory: PricePoint[] = [];
-    if (sortedSales.length > 0) {
-      const first = sortedSales[0].date;
-      const last = sortedSales.at(-1)?.date ?? first;
-      const totalDays = Math.ceil((last.getTime() - first.getTime()) / DAY_MS);
+    if (collEventsRes.status === "fulfilled") {
+      const raw = collEventsRes.value.asset_events
+        .filter((e) => e.payment?.quantity)
+        .map((e) => ({
+          ts: e.event_timestamp,
+          price: Number(e.payment.quantity) / 10 ** (e.payment.decimals || 18),
+        }))
+        .filter((e) => e.price > 0)
+        .sort((a, b) => a.ts - b.ts);
 
-      const saleMap = new Map<string, number>();
-      for (const s of sortedSales) {
-        saleMap.set(s.date.toISOString().split("T")[0], s.price);
+      // Aggregate to daily averages
+      const dailyMap = new Map<string, { total: number; count: number }>();
+      for (const e of raw) {
+        const day = new Date(e.ts * 1000).toISOString().split("T")[0];
+        const existing = dailyMap.get(day);
+        if (existing) {
+          existing.total += e.price;
+          existing.count += 1;
+        } else {
+          dailyMap.set(day, { total: e.price, count: 1 });
+        }
       }
 
-      let lastPrice = sortedSales[0].price;
-      for (let d = 0; d <= totalDays; d++) {
-        const date = new Date(first.getTime() + d * DAY_MS);
-        const key = date.toISOString().split("T")[0];
-        const salePrice = saleMap.get(key);
-        if (salePrice !== undefined) {
-          lastPrice = salePrice;
+      // Fill gaps: every day from first to last gets a point
+      const sortedDays = [...dailyMap.keys()].sort();
+      if (sortedDays.length >= 2) {
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const first = new Date(sortedDays[0]);
+        const lastDay = sortedDays.at(-1) ?? sortedDays[0];
+        const last = new Date(lastDay);
+        const totalDays = Math.round(
+          (last.getTime() - first.getTime()) / DAY_MS
+        );
+
+        let lastPrice = 0;
+        for (let d = 0; d <= totalDays; d++) {
+          const date = new Date(first.getTime() + d * DAY_MS);
+          const key = date.toISOString().split("T")[0];
+          const entry = dailyMap.get(key);
+          if (entry) {
+            lastPrice = Number((entry.total / entry.count).toFixed(4));
+          }
+          priceHistory.push({ date, price: lastPrice });
         }
-        priceHistory.push({ date, price: lastPrice });
+      } else {
+        for (const [key, v] of dailyMap) {
+          priceHistory.push({
+            date: new Date(key),
+            price: Number((v.total / v.count).toFixed(4)),
+          });
+        }
       }
     }
 
-    return { nft, collection: null, priceHistory, sales: sortedSales };
-  } catch {
-    return { nft: null, collection: null, priceHistory: [], sales: [] };
+    let relatedNfts: NFTData[] = [];
+    try {
+      const related = await getCollectionNFTs(osNft.collection, 8);
+      relatedNfts = related.nfts
+        .filter(
+          (n) =>
+            n.identifier !== tokenId && (n.display_image_url || n.image_url)
+        )
+        .slice(0, 6)
+        .map((n) => openSeaNFTToUnified(n, floorPrice));
+    } catch {
+      // non-critical
+    }
+
+    return {
+      nft,
+      collection: collectionData,
+      priceHistory,
+      sales: nftSales.sort((a, b) => a.date.getTime() - b.date.getTime()),
+      relatedNfts,
+    };
+  } catch (err) {
+    console.error("fetchNFTDetail error:", err);
+    return {
+      nft: null,
+      collection: null,
+      priceHistory: [],
+      sales: [],
+      relatedNfts: [],
+    };
   }
 }
 
 export async function fetchTrendingNFTs(): Promise<NFTData[]> {
   if (USE_MOCK) {
-    // Shuffle mock NFTs
     return [...mockNFTs].sort(() => Math.random() - 0.5).map(toUnifiedNFT);
   }
 
-  const data = await getTopCollections();
-  return data.ownedNfts
-    .filter((nft) => nft.image?.cachedUrl || nft.image?.thumbnailUrl)
-    .map((nft) => ({
-      tokenId: nft.tokenId,
-      name: nft.name || `#${nft.tokenId}`,
-      contract: nft.contract.address,
-      collection:
-        nft.contract.openSeaMetadata?.collectionName ||
-        nft.contract.name ||
-        "Unknown",
-      image: nft.image?.cachedUrl || nft.image?.thumbnailUrl || "",
-      traits: (nft.raw?.metadata?.attributes || []).map((a) => ({
-        traitType: a.trait_type,
-        value: a.value,
-      })),
-      floorPrice: nft.contract.openSeaMetadata?.floorPrice,
-    }));
+  const { collections } = await listCollections("seven_day_volume", 8);
+
+  const results = await Promise.allSettled(
+    collections.map(async (col) => {
+      const [nftsRes, statsRes] = await Promise.allSettled([
+        getCollectionNFTs(col.collection, 4),
+        getCollectionStats(col.collection),
+      ]);
+      const nfts = nftsRes.status === "fulfilled" ? nftsRes.value.nfts : [];
+      const floor =
+        statsRes.status === "fulfilled"
+          ? statsRes.value.total.floor_price
+          : undefined;
+      return nfts.map((n) => openSeaNFTToUnified(n, floor));
+    })
+  );
+
+  const allNfts: NFTData[] = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      allNfts.push(...result.value);
+    }
+  }
+
+  return allNfts.filter((n) => n.image);
 }
 
 export function fetchCollectionData(
@@ -243,7 +347,7 @@ export function fetchCollectionData(
     if (contract.toLowerCase() === MAYC_CONTRACT.toLowerCase()) {
       return Promise.resolve(maycCollection);
     }
-    return Promise.resolve(maycCollection); // fallback to MAYC for any contract in mock mode
+    return Promise.resolve(maycCollection);
   }
   return Promise.resolve(null);
 }
@@ -255,7 +359,7 @@ export function fetchCollectionPriceHistory(): PricePoint[] {
   return [];
 }
 
-// ---- Helper ----
+// ---- Mock helper ----
 
 function toUnifiedNFT(mock: MockNFT): NFTData {
   const floor = maycCollection.floorPrice;
