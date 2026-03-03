@@ -1,5 +1,6 @@
 import { GrainGradient } from "@paper-design/shaders-react";
 import type { Metadata } from "next";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ViewTransition } from "react";
 import { AppHeader } from "@/components/app-header";
@@ -55,9 +56,11 @@ export default function RootLayout({
                 <div className="absolute inset-0 bg-linear-to-b from-transparent to-background" />
               </div>
               <AppHeader />
-              <ViewTransition enter="page-transition" exit="page-transition">
-                <main className="flex-1">{children}</main>
-              </ViewTransition>
+              <NuqsAdapter>
+                <ViewTransition enter="page-transition" exit="page-transition">
+                  <main className="flex-1">{children}</main>
+                </ViewTransition>
+              </NuqsAdapter>
             </div>
           </Web3Provider>
         </ThemeProvider>

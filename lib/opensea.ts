@@ -271,3 +271,60 @@ export function getEventsByAccount(
     `/api/v2/events/chain/${chain}/account/${address}?limit=${limit}${typeFilter}`
   );
 }
+
+// ---- Best listings by collection (marketplace v2) ----
+
+export interface BestListingPrice {
+  currency: string;
+  decimals: number;
+  value: string;
+}
+
+export interface BestListingItem {
+  order_hash: string;
+  chain: string;
+  protocol_data?: { parameters?: Record<string, unknown>; signature?: string };
+  protocol_address?: string;
+  remaining_quantity: number;
+  price: { current: BestListingPrice };
+  type?: string;
+  status: string;
+  /** Optional asset/token info when returned by API */
+  maker_asset_bundle?: {
+    assets?: Array<{
+      token_id: string;
+      image_url?: string | null;
+      image_preview_url?: string | null;
+      display_image_url?: string | null;
+      display_animation_url?: string | null;
+      name: string | null;
+      asset_contract?: { address: string };
+      collection?: { collection?: string; name?: string };
+    }>;
+  };
+}
+
+export interface BestListingsResponse {
+  listings: BestListingItem[];
+  next?: string | null;
+}
+
+export function getBestListingsByCollection(
+  slug: string,
+  options: { limit?: number; next?: string; include_private_listings?: boolean } = {}
+): Promise<BestListingsResponse> {
+  const { limit = 20, next, include_private_listings } = options;
+  const params = new URLSearchParams();
+  params.set("limit", String(Math.min(limit, 200)));
+  if (next) {
+    params.set("next", next);
+  }
+  if (include_private_listings === true) {
+    params.set("include_private_listings", "true");
+  }
+  const query = params.toString();
+  return get<BestListingsResponse>(
+    `/api/v2/listings/collection/${encodeURIComponent(slug)}/best${query ? `?${query}` : ""}`,
+    30
+  );
+}

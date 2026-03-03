@@ -8,6 +8,7 @@ import {
   Layers,
   LayoutGrid,
   LayoutList,
+  Library,
   Loader2,
   Percent,
   TrendingUp,
@@ -171,16 +172,24 @@ export default function TokenDetailPage({ params }: PageProps) {
               {collection?.creator && <span> by {collection.creator}</span>}
             </p>
           </div>
-          <Button asChild size="sm" variant="outline">
-            <a
-              href={`https://opensea.io/assets/ethereum/${contract}/${tokenId}`}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <ExternalLink className="size-3" />
-              OpenSea
-            </a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="blue">
+              <Link href={`/collection/${encodeURIComponent(nft.collection)}`}>
+                <Library className="size-3" />
+                View collection
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <a
+                href={`https://opensea.io/assets/ethereum/${contract}/${tokenId}`}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <ExternalLink className="size-3" />
+                OpenSea
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
 

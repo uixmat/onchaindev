@@ -104,6 +104,9 @@ importers:
       number-flow:
         specifier: ^0.5.9
         version: 0.5.9
+      nuqs:
+        specifier: ^2.8.9
+        version: 2.8.9(next@16.1.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-272441a9-20260209(react@19.3.0-canary-272441a9-20260209))(react@19.3.0-canary-272441a9-20260209))(react@19.3.0-canary-272441a9-20260209)
       pg:
         specifier: ^8.18.0
         version: 8.18.0
@@ -2500,6 +2503,9 @@ packages:
 
   '@solana/web3.js@1.98.4':
     resolution: {integrity: sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==}
+
+  '@standard-schema/spec@1.0.0':
+    resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -5235,6 +5241,27 @@ packages:
 
   number-flow@0.5.9:
     resolution: {integrity: sha512-o3102c/4qRd6eV4n+rw6B/UP8+FosbhIxj4uA6GsjhryrGZRVtCtKIKEeBiOwUV52cUGJneeu0treELcV7U/lw==}
+
+  nuqs@2.8.9:
+    resolution: {integrity: sha512-8ou6AEwsxMWSYo2qkfZtYFVzngwbKmg4c00HVxC1fF6CEJv3Fwm6eoZmfVPALB+vw8Udo7KL5uy96PFcYe1BIQ==}
+    peerDependencies:
+      '@remix-run/react': '>=2'
+      '@tanstack/react-router': ^1
+      next: '>=14.2.0'
+      react: '>=18.2.0 || ^19.0.0-0'
+      react-router: ^5 || ^6 || ^7
+      react-router-dom: ^5 || ^6 || ^7
+    peerDependenciesMeta:
+      '@remix-run/react':
+        optional: true
+      '@tanstack/react-router':
+        optional: true
+      next:
+        optional: true
+      react-router:
+        optional: true
+      react-router-dom:
+        optional: true
 
   nypm@0.6.5:
     resolution: {integrity: sha512-K6AJy1GMVyfyMXRVB88700BJqNUkByijGJM8kEHpLdcAt+vSQAVfkWWHYzuRXHSY6xA2sNc5RjTj0p9rE2izVQ==}
@@ -9444,6 +9471,8 @@ snapshots:
       - typescript
       - utf-8-validate
 
+  '@standard-schema/spec@1.0.0': {}
+
   '@standard-schema/spec@1.1.0': {}
 
   '@standard-schema/utils@0.3.0': {}
@@ -12678,6 +12707,13 @@ snapshots:
   number-flow@0.5.9:
     dependencies:
       esm-env: 1.2.2
+
+  nuqs@2.8.9(next@16.1.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-272441a9-20260209(react@19.3.0-canary-272441a9-20260209))(react@19.3.0-canary-272441a9-20260209))(react@19.3.0-canary-272441a9-20260209):
+    dependencies:
+      '@standard-schema/spec': 1.0.0
+      react: 19.3.0-canary-272441a9-20260209
+    optionalDependencies:
+      next: 16.1.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-272441a9-20260209(react@19.3.0-canary-272441a9-20260209))(react@19.3.0-canary-272441a9-20260209)
 
   nypm@0.6.5:
     dependencies:
